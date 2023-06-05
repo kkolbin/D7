@@ -107,6 +107,18 @@ class NewsCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
+class ArticleCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    template_name = 'articles/article_create.html'
+    form_class = PostForm
+    success_url = reverse_lazy('news:news_list')
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        form.instance.post_type = 'article'  # Задаем тип записи как "статья"
+        return super().form_valid(form)
+
+
 class NewsUpdateView(UpdateView):
     model = Post
     template_name = 'news/news_edit.html'
@@ -119,40 +131,3 @@ class NewsDeleteView(DeleteView):
     template_name = 'news/news_delete.html'
     success_url = reverse_lazy('news:news_list')
 
-
-class ArticleListView(ListView):
-    model = Post
-    template_name = 'articles/article_list.html'
-    context_object_name = 'article'
-    ordering = ['-created_at']
-    paginate_by = 10
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        queryset = queryset.filter(post_type='article')  # Отфильтровать только статьм
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        paginator = context['paginator']
-        current_page = self.request.GET.get('page', 1)
-        news = paginator.get_page(current_page)
-
-        start_range = max(news.number - 5, 1)
-        end_range = min(news.number + 4, paginator.num_pages)
-
-        context['article'] = news
-        context['paginator'] = paginator
-        context['start_range'] = start_range
-        context['end_range'] = end_range
-        context['current_page'] = article.number
-        context['article_count'] = Post.objects.filter(post_type='article').count()
-        context['article'] = Post.objects.filter(post_type='article')  # Получить только статьм
-        return context
-
-
-class ArticleDetailView(DetailView):
-    model = Post
-    template_name = 'articles/article_detail.html'
-    context_object_name = 'article'
